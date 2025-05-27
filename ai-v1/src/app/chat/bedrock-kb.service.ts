@@ -19,8 +19,8 @@ export class BedrockServiceKb {
 
   constructor() {
     const credentials = {
-      accessKeyId: 'AKIAXYYC4O44K2XVQNSR',
-      secretAccessKey: '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'
+      accessKeyId: 'AKIAXYYC4O44P5L4NTOH',
+      secretAccessKey: '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'
     } as Credentials;
 
     this.client = new BedrockRuntimeClient({
@@ -37,10 +37,10 @@ export class BedrockServiceKb {
   async invoke(prompt: string): Promise<string> {
     const bodyObj = {
       anthropic_version: "bedrock-2023-05-31",
-      max_tokens: 200,
+      max_tokens: 5000,
       top_k: 250,
       stop_sequences: [],
-      temperature: 1,
+      temperature: 0.1,
       top_p: 0.999,
       messages: [
         {
@@ -109,7 +109,7 @@ export class BedrockServiceKb {
   // Method to query knowledge base and then send results to Claude
   async invokeWithKnowledgeBase(prompt: string): Promise<string> {
     // First, retrieve relevant information from the knowledge base
-    const retrievalResults = await this.retrieveFromKnowledgeBase(prompt, 'MLADKGCLCK');
+    const retrievalResults = await this.retrieveFromKnowledgeBase(prompt, 'BTJXHPTGYG');
 
     // Format the retrieved results to include in the prompt
     const retrievedContent = retrievalResults.retrievalResults?.map((result: any, index: number) =>
