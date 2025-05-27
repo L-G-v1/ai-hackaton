@@ -2,6 +2,7 @@
 import { Component } from '@angular/core';
 import { BedrockService } from './bedrock.service';
 import { BedrockServiceKb } from './bedrock-kb.service';
+import {BedrockServiceKbV2} from "./bedrock-kb-v2.service";
 
 interface ChatMsg {
   role: 'user' | 'assistant';
@@ -18,7 +19,7 @@ export class ChatComponent {
   loading = false;
   history: ChatMsg[] = [];        // ⬅️ chat log
 
-  constructor(private bedrock: BedrockService, private bedrockKb: BedrockServiceKb) {}
+  constructor(private bedrock: BedrockService, private bedrockKb: BedrockServiceKb, private bedrockKb2: BedrockServiceKbV2) {}
 
   onEnter(event: KeyboardEvent) {
     if (!event.shiftKey) {
@@ -38,7 +39,8 @@ export class ChatComponent {
 
     try {
       //const answer = await this.bedrock.invoke(question);
-      const answer = await this.bedrockKb.invokeWithKnowledgeBase(question);
+      //const answer = await this.bedrockKb.invokeWithKnowledgeBase(question);
+      const answer = await this.bedrockKb2.invokeWithKnowledgeBase(question);
       this.history.push({ role: 'assistant', text: answer });
     } catch (e) {
       this.history.push({ role: 'assistant', text: '⚠️ Error contacting Bedrock.' });
