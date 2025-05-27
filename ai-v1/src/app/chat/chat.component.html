@@ -1,0 +1,20 @@
+<!-- chat.component.html -->
+<div class="chat-box">
+  <div *ngFor="let msg of history" [ngClass]="msg.role">
+    <strong *ngIf="msg.role === 'user'">You:</strong>
+    <strong *ngIf="msg.role === 'assistant'">AI:</strong>
+    <span>{{ msg.text }}</span>
+  </div>
+
+  <div *ngIf="loading" class="assistant">AI: …typing</div>
+</div>
+
+<div class="input-area">
+<!--  <textarea [(ngModel)]="userInput"-->
+<!--            placeholder="Ask AI..."-->
+<!--            rows="3"></textarea>-->
+  <textarea [(ngModel)]="userInput" (keydown.enter)="send()" placeholder="Ask anything" rows="3"></textarea>
+  <button (click)="send()" [disabled]="loading || !userInput.trim()">
+    {{ loading ? 'Sending…' : 'Send' }}
+  </button>
+</div>
