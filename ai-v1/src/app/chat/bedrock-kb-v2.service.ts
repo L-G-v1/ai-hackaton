@@ -8,6 +8,29 @@ import {
   RetrieveAndGenerateCommand
 } from '@aws-sdk/client-bedrock-agent-runtime';
 import {Credentials} from '@aws-sdk/types';
+import {RetrieveAndGenerateResponse} from "@aws-sdk/client-bedrock-agent-runtime/dist-types/models/models_0";
+
+export interface Citation {
+  text: string;
+  retrievalDocumentId: string;
+  uri: string;
+  title: string;
+  page?: number;
+  span?: {
+    start: number;
+    end: number;
+  };
+}
+
+export interface CitationResp {
+  s3Uri: string;
+  textRef: string;
+}
+
+export interface Response {
+  citationResps: CitationResp[];
+  respSubString: string;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -30,7 +53,7 @@ export class BedrockServiceKbV2 {
   // Single call to query knowledge base and generate response
   async invokeWithKnowledgeBase(prompt: string): Promise<string> {
     const command = new RetrieveAndGenerateCommand({
-      input: { text: prompt },
+      input: {text: prompt},
       retrieveAndGenerateConfiguration: {
         type: "KNOWLEDGE_BASE",
         knowledgeBaseConfiguration: {
@@ -42,10 +65,42 @@ export class BedrockServiceKbV2 {
 
     try {
       const response = await this.agentClient.send(command);
-      return response.output?.text ?? "No reply";
+      const responses: Response[] = this.processResponse(response);
+
+      console.log("*************RESPONSE PROCESSED***********")
+      console.log(responses)
+      return '';
     } catch (error) {
       console.error("Error invoking knowledge base:", error);
-      return "Error occurred";
+      throw error;
     }
+  }
+
+  processResponse(response: RetrieveAndGenerateResponse): Response[] {
+    const responses: Response[] = [];
+    const fullText = response.output?.text || '';
+
+    response.citations?.forEach(citation => {
+      const citationResps: CitationResp[] = [];
+      let forEach = citation.retrievedReferences?.forEach(reference => {
+        // Find the matching reference
+        const textRef = reference.content?.text;
+        const s3Uri = reference.location?.s3Location?.uri
+
+        citationResps.push({
+          s3Uri: s3Uri || '',
+          textRef: textRef || ''
+        });
+      });
+
+      const respSubString = citation.generatedResponsePart?.textResponsePart?.text || '';
+
+      responses.push({
+        citationResps: citationResps,
+        respSubString: respSubString || ''
+      });
+    });
+
+    return responses;
   }
 }
