@@ -48,6 +48,9 @@ export class BedrockServiceKbV2 {
         knowledgeBaseConfiguration: {
           knowledgeBaseId: "BTJXHPTGYG", // Replace with your Knowledge Base ID
           modelArn: "us.anthropic.claude-3-7-sonnet-20250219-v1:0", // Replace with your model ARN
+          orchestrationConfiguration: {
+            queryTransformationConfiguration:{type:'QUERY_DECOMPOSITION'}
+          }
         },
       },
     });
