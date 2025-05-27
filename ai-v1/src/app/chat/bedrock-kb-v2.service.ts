@@ -75,7 +75,7 @@ export class BedrockServiceKbV2 {
       let forEach = citation.retrievedReferences?.forEach(reference => {
         // Find the matching reference
         const textRef = reference.content?.text;
-        const s3Uri = reference.location?.s3Location?.uri
+        const s3Uri = this.convertS3UriToHttpsUrl(reference.location?.s3Location?.uri || '');
 
         citationResps.push({
           s3Uri: s3Uri || '',
@@ -93,5 +93,29 @@ export class BedrockServiceKbV2 {
     });
 
     return responses;
+  }
+
+  convertS3UriToHttpsUrl(s3Uri: string, region = "us-west-2"): string {
+    if (!s3Uri.startsWith("s3://")) {
+      throw new Error("Invalid S3 URI format");
+    }
+
+    // Remove the 's3://' prefix
+    const path = s3Uri.slice(5);
+
+    // Split into bucket and key
+    const firstSlashIndex = path.indexOf("/");
+    if (firstSlashIndex === -1) {
+      throw new Error("Invalid S3 URI: missing object key");
+    }
+
+    const bucket = path.substring(0, firstSlashIndex);
+    const key = path.substring(firstSlashIndex + 1);
+
+    // Replace spaces with '+' for URL encoding
+    const encodedKey = key.replace(/ /g, "+");
+
+    // Construct the HTTPS URL
+    return `https://${bucket}.s3.${region}.amazonaws.com/${encodedKey}`;
   }
 }
