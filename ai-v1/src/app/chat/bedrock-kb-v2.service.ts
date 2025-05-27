@@ -1,14 +1,11 @@
 import {Injectable} from '@angular/core';
 import {
-  BedrockRuntimeClient,
-  InvokeModelCommand
-} from '@aws-sdk/client-bedrock-runtime';
-import {
   BedrockAgentRuntimeClient,
   RetrieveAndGenerateCommand
 } from '@aws-sdk/client-bedrock-agent-runtime';
 import {Credentials} from '@aws-sdk/types';
 import {RetrieveAndGenerateResponse} from "@aws-sdk/client-bedrock-agent-runtime/dist-types/models/models_0";
+import {randomUUID} from 'crypto';
 
 export interface CitationResp {
   s3Uri: string;
@@ -21,11 +18,26 @@ export interface Response {
   respSubString: string;
 }
 
+interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp?: Date;
+}
+
+interface ConversationContext {
+  id: string;
+  messages: ConversationMessage[];
+}
+
+// In-memory store to hold conversation contexts keyed by conversationId
+const conversationStore = new Map<string, ConversationContext>();
+
 @Injectable({
   providedIn: 'root'
 })
 export class BedrockServiceKbV2 {
   private agentClient: BedrockAgentRuntimeClient;
+  private sessionId: string;
 
   constructor() {
     const credentials = {
@@ -37,12 +49,63 @@ export class BedrockServiceKbV2 {
       region: 'us-west-2',
       credentials
     });
+
+    this.sessionId = (Math.floor(Math.random() * 100) + 1).toString();
+  }
+
+  getConversationContext(conversationId: string, maxTurns: number): ConversationContext {
+    // Retrieve existing context or initialize a new one
+    let context = conversationStore.get(conversationId);
+    if (!context) {
+      context = {id: conversationId, messages: []};
+      conversationStore.set(conversationId, context);
+    }
+
+    // Trim to the last maxTurns messages
+    if (context.messages.length > maxTurns * 2) {
+      context.messages = context.messages.slice(-maxTurns * 2);
+    }
+
+    return context;
+  }
+
+  formatConversationHistory(context: ConversationContext): string {
+    return context.messages
+      .map(msg => `${msg.role === 'user' ? 'Human' : 'Assistant'}: ${msg.content}`)
+      .join('\n');
   }
 
   // Single call to query knowledge base and generate response
   async invokeWithKnowledgeBase(prompt: string): Promise<Response[]> {
+    // Retrieve or create conversation context
+    const conversationContext = this.getConversationContext(this.sessionId, 20);
+
+    // Add current user message to context
+    conversationContext.messages.push({
+      role: 'user',
+      content: prompt,
+      timestamp: new Date()
+    });
+
+    // Format conversation history
+    const conversationHistory = this.formatConversationHistory(conversationContext);
+
+    // Construct the enhanced prompt with conversation history
+    const enhancedPrompt = `
+System: You are the WIPO Lex AI Assistant, a specialized AI designed to help users understand intellectual property (IP) laws, treaties, and regulations based on information from the WIPO Lex database and provided legal texts.
+        Your primary goal is to provide accurate, concise, and clearly cited answers based solely on the document excerpts and metadata provided to you for each query.
+        Core Instructions & Constraints:
+          2. Citation Mandate: For every piece of information you provide in your answer, you MUST cite the specific source document, including article, section, paragraph number, and document title as available in the metadata of the provided context. For example: "According to Article 5(1)(a) of the Berne Convention for the Protection of Literary and Artistic Works..." If multiple sources from the context are used, cite each relevant part.
+
+Previous conversation:
+${conversationHistory}
+
+Current question:
+${prompt}
+`;
+
     const command = new RetrieveAndGenerateCommand({
-      input: {text: prompt},
+      input: {text: enhancedPrompt},
       retrieveAndGenerateConfiguration: {
         type: "KNOWLEDGE_BASE",
         knowledgeBaseConfiguration: {
@@ -56,10 +119,20 @@ export class BedrockServiceKbV2 {
     });
 
     try {
+      console.log("*************AI REQUEST***********")
+      console.log(enhancedPrompt)
+
       const response = await this.agentClient.send(command);
       const responses: Response[] = this.processResponse(response);
 
-      console.log("*************RESPONSE PROCESSED***********")
+      // Add assistant's response to context
+      conversationContext.messages.push({
+        role: 'assistant',
+        content: response.output?.text ?? '',
+        timestamp: new Date()
+      });
+
+      console.log("*************AI RESPONSE***********")
       console.log(responses)
       return responses;
     } catch (error) {
