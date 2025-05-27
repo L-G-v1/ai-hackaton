@@ -107,15 +107,27 @@ ${prompt}
     const command = new RetrieveAndGenerateCommand({
       input: {text: enhancedPrompt},
       retrieveAndGenerateConfiguration: {
+
         type: "KNOWLEDGE_BASE",
         knowledgeBaseConfiguration: {
+
           knowledgeBaseId: "BTJXHPTGYG", // Replace with your Knowledge Base ID
           modelArn: "us.anthropic.claude-3-7-sonnet-20250219-v1:0", // Replace with your model ARN
           orchestrationConfiguration: {
-            queryTransformationConfiguration:{type:'QUERY_DECOMPOSITION'}
+            inferenceConfig:{textInferenceConfig:{temperature:0.1, maxTokens:8192}},
+            queryTransformationConfiguration:{type:'QUERY_DECOMPOSITION'},
+            
+          },
+          generationConfiguration:{
+            /*guardrailConfiguration: {              
+              guardrailId: "z5uak9pmsf0d", 
+              guardrailVersion: "2", 
+             }*/
+            /*additionalModelRequestFields:{"reasoningConfig":{"type":"enabled", "budget":2000 }}*/
           }
         },
       },
+      
     });
 
     try {
