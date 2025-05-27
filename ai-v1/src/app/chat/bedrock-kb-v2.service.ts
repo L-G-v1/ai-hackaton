@@ -10,21 +10,10 @@ import {
 import {Credentials} from '@aws-sdk/types';
 import {RetrieveAndGenerateResponse} from "@aws-sdk/client-bedrock-agent-runtime/dist-types/models/models_0";
 
-export interface Citation {
-  text: string;
-  retrievalDocumentId: string;
-  uri: string;
-  title: string;
-  page?: number;
-  span?: {
-    start: number;
-    end: number;
-  };
-}
-
 export interface CitationResp {
   s3Uri: string;
   textRef: string;
+  nr: number;
 }
 
 export interface Response {
@@ -79,6 +68,7 @@ export class BedrockServiceKbV2 {
   processResponse(response: RetrieveAndGenerateResponse): Response[] {
     const responses: Response[] = [];
     const fullText = response.output?.text || '';
+    let nr: number = 1;
 
     response.citations?.forEach(citation => {
       const citationResps: CitationResp[] = [];
@@ -89,7 +79,8 @@ export class BedrockServiceKbV2 {
 
         citationResps.push({
           s3Uri: s3Uri || '',
-          textRef: textRef || ''
+          textRef: textRef || '',
+          nr: nr++
         });
       });
 
