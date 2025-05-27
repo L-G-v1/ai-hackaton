@@ -40,7 +40,7 @@ export class BedrockServiceKbV2 {
   }
 
   // Single call to query knowledge base and generate response
-  async invokeWithKnowledgeBase(prompt: string): Promise<string> {
+  async invokeWithKnowledgeBase(prompt: string): Promise<Response[]> {
     const command = new RetrieveAndGenerateCommand({
       input: {text: prompt},
       retrieveAndGenerateConfiguration: {
@@ -58,7 +58,7 @@ export class BedrockServiceKbV2 {
 
       console.log("*************RESPONSE PROCESSED***********")
       console.log(responses)
-      return '';
+      return responses;
     } catch (error) {
       console.error("Error invoking knowledge base:", error);
       throw error;

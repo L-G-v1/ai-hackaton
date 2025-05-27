@@ -3,7 +3,7 @@
   <div *ngFor="let msg of history" [ngClass]="msg.role">
     <strong *ngIf="msg.role === 'user'">You:</strong>
     <strong *ngIf="msg.role === 'assistant'">AI:</strong>
-    <span>{{ msg.text }}</span>
+    <div [innerHTML]="msg.text"></div>
   </div>
 
   <div *ngIf="loading" class="assistant">AI: …typing</div>
