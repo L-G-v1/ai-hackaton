@@ -92,17 +92,6 @@ export class BedrockServiceKbV2 {
 
     // Construct the enhanced prompt with conversation history
     const enhancedPrompt = `
-System: You are the WIPO Lex AI Assistant, a specialized AI designed to help users understand intellectual property (IP) laws, treaties, and regulations based on information from the WIPO Lex database and provided legal texts.
-        Your primary goal is to provide accurate, concise, and clearly cited answers based solely on the document excerpts and metadata provided to you for each query.
-        Core Instructions & Constraints:
-          1. Information Not Found: If the provided context does not contain the information needed to answer the user's question, you MUST explicitly state that the information is not available in the provided materials. Do not attempt to guess or infer an answer.
-          2. Citation Mandate: For every piece of information you provide in your answer, you MUST cite the specific source document, including article, section, paragraph number, and document title as available in the metadata of the provided context. For example: "According to Article 5(1)(a) of the Berne Convention for the Protection of Literary and Artistic Works..." If multiple sources from the context are used, cite each relevant part.
-          3. Return the responses formatted with markdown.
-
-
-Previous conversation:
-${conversationHistory}
-
 Current question:
 ${prompt}
 `;
@@ -115,9 +104,9 @@ ${prompt}
         knowledgeBaseConfiguration: {
 
           knowledgeBaseId: "BTJXHPTGYG", // Replace with your Knowledge Base ID
-          modelArn: "us.anthropic.claude-3-7-sonnet-20250219-v1:0", // Replace with your model ARN
+          modelArn: "us.amazon.nova-pro-v1:0", // Replace with your model ARN
           orchestrationConfiguration: {
-            inferenceConfig:{textInferenceConfig:{temperature:0, maxTokens:8192}},
+            inferenceConfig:{textInferenceConfig:{temperature:0.1, maxTokens:8000}},
             queryTransformationConfiguration:{type:'QUERY_DECOMPOSITION'},
 
           },
@@ -135,6 +124,11 @@ ${prompt}
               guardrailVersion: "1",
             }
             /*additionalModelRequestFields:{"reasoningConfig":{"type":"enabled", "budget":2000 }}*/
+          },
+          retrievalConfiguration:{
+            vectorSearchConfiguration:{
+              numberOfResults: 50
+            }
           }
         },
       },
