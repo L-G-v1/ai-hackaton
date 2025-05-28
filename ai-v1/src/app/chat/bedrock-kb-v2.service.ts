@@ -116,18 +116,26 @@ ${prompt}
           orchestrationConfiguration: {
             inferenceConfig:{textInferenceConfig:{temperature:0.1, maxTokens:8192}},
             queryTransformationConfiguration:{type:'QUERY_DECOMPOSITION'},
-            
+
           },
           generationConfiguration:{
-            /*guardrailConfiguration: {              
-              guardrailId: "z5uak9pmsf0d", 
-              guardrailVersion: "2", 
-             }*/
+            // guardrailConfiguration: {
+            //   guardrailId: "z5uak9pmsf0d",
+            //   guardrailVersion: "2",
+            // }
+            // guardrailConfiguration: {
+            //   guardrailId: "bvrr4h1d2fv4",
+            //   guardrailVersion: "1",
+            // }
+            guardrailConfiguration: {
+              guardrailId: "0ztb7rpocma8",
+              guardrailVersion: "1",
+            }
             /*additionalModelRequestFields:{"reasoningConfig":{"type":"enabled", "budget":2000 }}*/
           }
         },
       },
-      
+
     });
 
     try {
@@ -135,6 +143,9 @@ ${prompt}
       console.log(enhancedPrompt)
 
       const response = await this.agentClient.send(command);
+      console.log("*************AI RESPONSE***********");
+      console.log(response);
+
       const responses: Response[] = this.processResponse(response);
 
       // Add assistant's response to context
@@ -144,7 +155,7 @@ ${prompt}
         timestamp: new Date()
       });
 
-      console.log("*************AI RESPONSE***********")
+      console.log("*************RESPONSE PROCESSED***********")
       console.log(responses)
       return responses;
     } catch (error) {
@@ -155,8 +166,21 @@ ${prompt}
 
   processResponse(response: RetrieveAndGenerateResponse): Response[] {
     const responses: Response[] = [];
-    const fullText = response.output?.text || '';
     let nr: number = 1;
+
+    if (response.guardrailAction === 'INTERVENED') {
+      // Return empty array or handle guardrail intervention as needed
+      console.warn('Guardrail intervened in the response');
+
+      const citationResps: CitationResp[] = [];
+
+      responses.push({
+        citationResps: citationResps,
+        respSubString: response.output?.text || ''
+      });
+
+      return responses;
+    }
 
     response.citations?.forEach(citation => {
       const citationResps: CitationResp[] = [];
