@@ -43,7 +43,7 @@ export class ChatComponent {
       const answer = await this.bedrockKb2.invokeWithKnowledgeBase(question);
       // Get the text from each response and join them together
       //const responseText = answer.map(resp => resp.respSubString || '').join('`<a href="www.google.ro" target="_blank">LINK</a>`<br>');
-      const responseText = answer
+      let responseText = answer
         .map(resp => {
           const text = resp.respSubString || '';
           const links = (resp.citationResps || [])
@@ -52,8 +52,12 @@ export class ChatComponent {
           return `${text} ${links}`;
         })
         .join('<br>');
-      responseText.replace(/\r\n/g, '<br>');
-      this.history.push({ role: 'assistant', text: responseText });
+      const formattedText = responseText
+        .replace(/\r\n/g, '<br>')  // Windows line breaks
+        .replace(/\n/g, '<br>')    // Unix/Linux line breaks
+        .replace(/\r/g, '<br>');   // Old Mac line breaks
+
+      this.history.push({ role: 'assistant', text: formattedText });
     } catch (e) {
       this.history.push({ role: 'assistant', text: '⚠️ Error contacting Bedrock.' });
       console.error(e);
