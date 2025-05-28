@@ -52,6 +52,7 @@ export class ChatComponent {
           return `${text} ${links}`;
         })
         .join('<br>');
+      responseText.replace(/\r\n/g, '<br>');
       this.history.push({ role: 'assistant', text: responseText });
     } catch (e) {
       this.history.push({ role: 'assistant', text: '⚠️ Error contacting Bedrock.' });
